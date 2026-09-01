@@ -14,20 +14,7 @@ python app.py
 # open http://localhost:5000
 ```
 
-## Deploy to Render
 
-1. Push this repo to GitHub.
-2. In Render, choose **New + → Blueprint** and point it at this repo — it will pick up
-   `render.yaml` automatically and provision the web service with a persistent disk
-   mounted at `data/` (so registered files/chains survive restarts).
-   - Alternatively, choose **New + → Web Service**, connect the repo, and set:
-     - Build Command: `pip install -r requirements.txt`
-     - Start Command: `gunicorn app:app --workers 2 --threads 4 --timeout 120`
-     - Add an environment variable `SECRET_KEY` with a random value.
-3. Note: on Render's free tier the filesystem is ephemeral unless you attach a persistent
-   disk (the `render.yaml` here does this for `data/`). `uploads/` is not persisted by
-   default — add it to the disk mount too, or accept that uploaded originals/watermarked
-   copies reset on redeploy (fine for a demo).
 
 ## Project layout
 
