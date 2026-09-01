@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.DS_Store
+data/*.json
+data/chains/*.json
+uploads/originals/*
+uploads/watermarked/*
+uploads/scan_tmp/*
+!data/.gitkeep
+!data/chains/.gitkeep
+!uploads/originals/.gitkeep
+!uploads/watermarked/.gitkeep
+!uploads/scan_tmp/.gitkeep

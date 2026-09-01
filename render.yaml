@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: ledger-chain-of-custody
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers 2 --threads 4 --timeout 120
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+    disk:
+      name: ledger-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1

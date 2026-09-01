@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LEDGER — Chain of Custody</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ink: '#0b0d10',
+          panel: '#14171d',
+          line: '#262b33',
+          amber: { DEFAULT: '#d8a44c', 400: '#e2b665', 600: '#b98431' },
+          teal: { DEFAULT: '#3fae83' },
+          rose: { DEFAULT: '#c0526b' },
+          bone: '#e9e4d8',
+          muted: '#8a94a6',
+        },
+        fontFamily: {
+          serif: ['Spectral', 'ui-serif', 'Georgia', 'serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+          sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        },
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="h-full bg-ink text-bone font-sans dotgrid">
+
+<div id="app" class="min-h-full flex flex-col">
+
+  <header class="border-b border-line bg-panel/60 backdrop-blur">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-sm bg-amber/10 border border-amber/40 flex items-center justify-center font-serif text-amber font-semibold">L</div>
+        <div>
+          <h1 class="font-serif text-lg tracking-wide leading-none">LEDGER</h1>
+          <p class="text-[11px] uppercase tracking-[0.2em] text-muted">Chain of Custody Registry</p>
+        </div>
+      </div>
+      <div id="identity-bar" class="text-sm text-muted"></div>
+    </div>
+  </header>
+
+  <div id="identity-gate" class="hidden fixed inset-0 bg-ink/90 z-50 flex items-center justify-center p-6">
+    <div class="w-full max-w-md bg-panel border border-line rounded-md p-8 relative">
+      <div class="absolute -top-3 left-8 px-3 py-1 bg-amber text-ink text-[11px] uppercase tracking-widest font-semibold rounded-sm">Case Intake</div>
+      <h2 class="font-serif text-xl mb-1 mt-2">Establish Identity</h2>
+      <p class="text-sm text-muted mb-6">No passwords — this record ties every action to what you declare below.</p>
+      <form id="identity-form" class="space-y-4">
+        <div>
+          <label class="label">Full Name</label>
+          <input required name="name" class="field" placeholder="Jane Okafor">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="label">Organization</label>
+            <input required name="org" class="field" placeholder="Acme Studios">
+          </div>
+          <div>
+            <label class="label">Phone</label>
+            <input name="phone" class="field" placeholder="+1 555 0102">
+          </div>
+        </div>
+        <div>
+          <label class="label">Email</label>
+          <input required type="email" name="email" class="field" placeholder="jane@acme.com">
+        </div>
+        <div>
+          <label class="label">Acting as</label>
+          <div class="grid grid-cols-2 gap-3 mt-1">
+            <label class="role-pick">
+              <input type="radio" name="role" value="validator" class="sr-only" checked>
+              <span class="role-card">Validator<br><span class="text-[11px] text-muted font-normal">Owner — protect &amp; approve</span></span>
+            </label>
+            <label class="role-pick">
+              <input type="radio" name="role" value="requester" class="sr-only">
+              <span class="role-card">Requester<br><span class="text-[11px] text-muted font-normal">Ask for access</span></span>
+            </label>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary w-full mt-2">Enter Ledger</button>
+      </form>
+    </div>
+  </div>
+
+  <nav class="max-w-6xl w-full mx-auto px-6 pt-6">
+    <div class="flex gap-1 folder-tabs">
+      <button data-tab="validator" class="tab-btn">Validator</button>
+      <button data-tab="requester" class="tab-btn">Requester</button>
+      <button data-tab="scan" class="tab-btn">Scan</button>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl w-full mx-auto px-6 pb-16 flex-1">
+
+    <section id="tab-validator" class="tab-panel">
+      <div class="grid md:grid-cols-2 gap-6 mt-6">
+        <div class="panel-card">
+          <h3 class="section-title">Register New File</h3>
+          <p class="text-sm text-muted mb-4">Uploading creates a genesis block — the permanent origin record for this file.</p>
+          <form id="register-form" class="space-y-3">
+            <input required type="file" name="file" class="field-file">
+            <button type="submit" class="btn-primary w-full">Protect File &amp; Create Genesis Block</button>
+          </form>
+          <p id="register-msg" class="text-sm mt-3"></p>
+        </div>
+        <div class="panel-card">
+          <h3 class="section-title">Incoming Requests</h3>
+          <div id="incoming-list" class="space-y-3 max-h-[420px] overflow-auto pr-1"></div>
+        </div>
+      </div>
+
+      <div class="panel-card mt-6">
+        <h3 class="section-title">Your Protected Files</h3>
+        <div id="my-files-list" class="space-y-3"></div>
+      </div>
+
+      <div id="chain-view" class="panel-card mt-6 hidden">
+        <h3 class="section-title">Chain of Custody</h3>
+        <div id="chain-content" class="mt-2"></div>
+      </div>
+    </section>
+
+    <section id="tab-requester" class="tab-panel hidden">
+      <div class="grid md:grid-cols-2 gap-6 mt-6">
+        <div class="panel-card">
+          <h3 class="section-title">Browse Protected Files</h3>
+          <div id="browse-list" class="space-y-3 max-h-[520px] overflow-auto pr-1"></div>
+        </div>
+        <div class="panel-card">
+          <h3 class="section-title">My Requests</h3>
+          <div id="my-requests-list" class="space-y-3 max-h-[520px] overflow-auto pr-1"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-scan" class="tab-panel hidden">
+      <div class="panel-card mt-6 max-w-2xl">
+        <h3 class="section-title">Scan a File</h3>
+        <p class="text-sm text-muted mb-4">Upload any file — possibly leaked — to extract its embedded watermark and trace it back to the exact holder.</p>
+        <form id="scan-form" class="space-y-3">
+          <input required type="file" name="file" class="field-file">
+          <button type="submit" class="btn-primary w-full">Scan for Watermark</button>
+        </form>
+      </div>
+      <div id="scan-result" class="mt-6"></div>
+    </section>
+
+  </main>
+
+  <footer class="border-t border-line py-4 text-center text-[11px] text-muted uppercase tracking-[0.2em]">
+    Ephemeral demo ledger — data resets on redeploy
+  </footer>
+</div>
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
